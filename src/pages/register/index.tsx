@@ -14,133 +14,124 @@ export default function Register() {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const userNameRef = useRef<HTMLInputElement>(null);
-  const pwdRef = useRef<HTMLInputElement>(null);
+  const pwdRef = useRef<any>(null);
   const getData = useRef<any>(null);
   const [showErr, setShowErr] = useState(false);
-  const handleRegist = async () => {
-    const username = userNameRef.current!.value;
-    const password = pwdRef.current!.value;
+  const handleRegist = async (value: any) => {
+    console.log(value);
+    delete value.confirmPwd;
+    console.log(value);
 
-    let formData = new FormData();
-    formData.append("name", username);
-    formData.append("pwd", password);
+    getData.current = await register(value);
+    console.log(getData.current);
 
-    getData.current = await register(formData);
-
-    if (getData.current.msg === "注册成功") {
-      navigate("/login", { state: { username, password } });
-    } else if (getData.current.includes("注册失败")) {
-      setShowErr(true);
-      setTimeout(() => {
-        setShowErr(false);
-      }, 2000);
+    if (getData.current.message === "注册成功") {
+      navigate("/login");
+    } else if (getData.current.message.includes("QQ号被占用")) {
+      Message.error(`QQ号被占用,请更换其他的QQ号!`);
+      // setTimeout(() => {
+      //   setShowErr(false);
+      // }, 2000);
     }
   };
   useEffect(() => {
     setShowErr(false);
   }, []);
+
   return (
     <div className={style["container"]}>
-      <div>在线互动聊天系统</div>
+      <div className={style["title"]}>在线互动聊天系统</div>
       <div className={style["login-wrapper"]}>
-        <div className={style["header"]}>注册</div>
+        <div className={style["header"]}>Register</div>
         <div className={style["form-wrapper"]}>
-          <Form form={form} autoComplete="off" style={{ width: 600 }}>
+          <Form
+            form={form}
+            autoComplete="off"
+            style={{ width: 600 }}
+            validateMessages={{
+              string: {
+                length: `长度必须是 #{length}位`,
+                match: `不匹配正则 #{pattern}`,
+              },
+              number: {
+                min: `最小值为 #{min}`,
+                max: `最大值为 #{max}`,
+                length: `长度必须是 #{length}位`,
+              },
+            }}
+            onSubmit={(value: any) => handleRegist(value)}
+          >
             <FormItem
               label="QQ号"
-              field="name"
-              required
+              field="qq"
               rules={[
                 {
-                  validator(value, cb) {
-                    if (value !== "hahaha") {
-                      return cb("必须填写hahaha");
-                    }
-                    return cb();
-                  },
+                  required: true,
+                  type: "string",
+                  length: 10,
                 },
               ]}
+              validateTrigger="onBlur"
             >
-              <Input placeholder="请输入8位的QQ号" />
+              <Input placeholder="请输入10位的qq号码" />
             </FormItem>
+
             <FormItem
               label="昵称"
-              field="age"
-              rules={[{ required: true, type: "number", min: 0, max: 99 }]}
+              field="nickname"
+              rules={[{ required: true, type: "string" }]}
+              validateTrigger="onBlur"
             >
-              <InputNumber placeholder="请输入昵称" />
-            </FormItem>
-            <FormItem
-              label="昵称"
-              field="age"
-              rules={[{ required: true, type: "number", min: 0, max: 99 }]}
-            >
-              <InputNumber placeholder="请输入昵称" />
+              <Input placeholder="请输入昵称" />
             </FormItem>
             <FormItem
               label="密码"
-              field="age"
-              rules={[{ required: true, type: "number", min: 0, max: 99 }]}
+              field="password"
+              rules={[{ required: true, type: "string" }]}
+              validateTrigger="onBlur"
             >
-              <InputNumber placeholder="请输入密码" />
+              <Input placeholder="请输入密码" />
             </FormItem>
             <FormItem
               label="确认密码"
-              field="age"
-              rules={[{ required: true, type: "number", min: 0, max: 99 }]}
+              field="confirmPwd"
+              rules={[{ required: true, type: "string" }]}
+              validateTrigger="onBlur"
             >
-              <InputNumber placeholder="请输入再次密码" />
+              <Input placeholder="请输入再次密码" />
             </FormItem>
             <FormItem
               label="年龄"
               field="age"
               rules={[{ required: true, type: "number", min: 0, max: 99 }]}
+              validateTrigger="onBlur"
             >
               <InputNumber placeholder="请输入年龄" />
             </FormItem>
             <FormItem
               label="电话号码"
-              field="age"
-              rules={[{ required: true, type: "number", min: 0, max: 99 }]}
+              field="telephone"
+              rules={[{ required: true, type: "string", length: 11 }]}
+              validateTrigger="onBlur"
             >
-              <InputNumber placeholder="请输入电话号码" />
+              <Input placeholder="请输入电话号码" />
             </FormItem>
-            <FormItem wrapperCol={{ offset: 5 }}>
+            <FormItem wrapperCol={{ offset: 9 }}>
               <Button
                 type="primary"
-                onClick={async () => {
-                  try {
-                    await form.validate();
-                    Message.success("校验通过");
-                  } catch (e) {
-                    Message.error("校验失败");
-                  }
-                }}
-                style={{ marginRight: 24 }}
+                style={{ marginRight: 40, width: 80 }}
+                htmlType="submit"
               >
-                Validate Form
+                注册
               </Button>
+
               <Button
-                type="primary"
-                onClick={async () => {
-                  try {
-                    await form.validate(["name"]);
-                    Message.success("Username 校验通过");
-                  } catch (e) {
-                    Message.error("Username 校验失败");
-                  }
-                }}
-                style={{ marginRight: 24 }}
-              >
-                Validate Username
-              </Button>
-              <Button
-                style={{ marginRight: 24 }}
+                style={{ marginRight: 24, width: 80 }}
                 onClick={() => {
                   form.resetFields();
                 }}
               >
-                Reset
+                重置
               </Button>
             </FormItem>
           </Form>

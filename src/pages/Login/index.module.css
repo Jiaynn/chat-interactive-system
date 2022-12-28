@@ -1,6 +1,16 @@
 .container {
   height: 100vh;
-  background-image: linear-gradient(to right, #ddbdfc, var(--theme-bg-blue));
+  background-image: linear-gradient(to right, #ddbdfc, #a6c1ee);
+}
+.title {
+  position: absolute;
+  top: 50px;
+  left: 630px;
+  letter-spacing: 2px;
+  /* padding: 40px 0 0px 0; */
+  font-size: 40px;
+  font-weight: bold;
+  text-align: center;
 }
 .login-wrapper {
   background-color: #fff;
@@ -45,7 +55,7 @@
   padding: 10px;
   width: 100%;
   margin-top: 40px;
-  background-image: linear-gradient(to right, var(--theme-bg-blue), var(--theme-bg-pink));
+  background-image: linear-gradient(to right, #a6c1ee, #fbc2eb);
   color: #fff;
   caret-color: transparent;
 }

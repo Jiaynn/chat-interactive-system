@@ -20,11 +20,17 @@
   box-shadow: rgba(73, 99, 154, 0.6) 0px 7px 29px 0px;
 }
 .title {
-  margin: 20px 0 0px 0;
-  font-size: 16px;
+  position: absolute;
+  top: 50px;
+  left: 630px;
+  letter-spacing: 2px;
+  /* padding: 40px 0 0px 0; */
+  font-size: 40px;
+  font-weight: bold;
+  text-align: center;
 }
 .header {
-  font-size: 38px;
+  font-size: 30px;
   font-weight: bold;
   text-align: center;
   line-height: 120px;
@@ -61,6 +67,7 @@
 }
 .msg {
   text-align: center;
+  margin-top: -20px;
   line-height: 70px;
   caret-color: transparent;
 }

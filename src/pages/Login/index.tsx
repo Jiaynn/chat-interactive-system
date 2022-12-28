@@ -2,6 +2,7 @@ import { login } from "../../service";
 import { FC, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import style from "./index.module.css";
+import { Message } from "@arco-design/web-react";
 
 const Login: FC = () => {
   const { state } = useLocation();
@@ -17,32 +18,31 @@ const Login: FC = () => {
   const getLoginData = useRef<any>(null);
   const [showErr, setShowErr] = useState(false);
   const handleLogin = async () => {
-    let formData = new FormData();
-    formData.append("name", userNameRef.current!.value);
-    formData.append("pwd", pwdRef.current!.value);
-    getLoginData.current = await login(formData);
-    if (getLoginData.current.msg === "登录成功") {
-      localStorage.setItem(
-        "token",
-        JSON.stringify(getLoginData.current.data.token)
-      );
-      navigate("/home");
+    const obj = {
+      qq: userNameRef.current!.value,
+      password: pwdRef.current!.value,
+    };
+
+    getLoginData.current = await login(obj);
+    console.log(getLoginData.current);
+
+    if (getLoginData.current.message === "登录成功") {
+      localStorage.setItem("token", JSON.stringify(getLoginData.current.token));
+      navigate("/chat");
     } else {
-      setShowErr(true);
-      setTimeout(() => {
-        setShowErr(false);
-      }, 2000);
+      Message.error("登录失败，密码错误，请重试！");
     }
   };
   return (
     <div className={style["container"]}>
+      <div className={style["title"]}>在线互动聊天系统</div>
       <div className={style["login-wrapper"]}>
         <div className={style["header"]}>Login</div>
         <div className={style["form-wrapper"]}>
           <input
             type="text"
             name="username"
-            placeholder="username"
+            placeholder="请输入QQ号"
             className={style["input-item"]}
             ref={userNameRef}
           />
@@ -50,7 +50,7 @@ const Login: FC = () => {
             <input
               type="password"
               name="password"
-              placeholder="password"
+              placeholder="请输入密码"
               className={style["input-item"]}
               ref={pwdRef}
             />
