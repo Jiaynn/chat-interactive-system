@@ -1,42 +1,307 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./index.css";
-import { Layout } from "@arco-design/web-react";
-import { useNavigate } from "react-router-dom";
+
+import { useLocation, useNavigate } from "react-router-dom";
+
 const Sider = Layout.Sider;
 const Header = Layout.Header;
 const Footer = Layout.Footer;
 const Content = Layout.Content;
+import {
+  Empty,
+  Layout,
+  Menu,
+  Message,
+  Modal,
+  Form,
+  Input,
+} from "@arco-design/web-react";
+import {
+  IconHome,
+  IconCalendar,
+  IconExclamation,
+  IconPlus,
+} from "@arco-design/web-react/icon";
+import { addFriend, deleteFriend, getFriend } from "../../service";
+const MenuItem = Menu.Item;
+const SubMenu = Menu.SubMenu;
 
+const collapsedWidth = 60;
+const normalWidth = 220;
 export default function Chat() {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  console.log("state", state);
+
   function handleLoginOut() {
     localStorage.removeItem("token");
     navigate("/login");
   }
+
+  const ws = new WebSocket("ws://127.0.0.1:3007");
+  console.log(ws);
+  ws.onopen = () => {
+    console.log("连接服务器成功");
+    ws.send("连接服务器成功");
+  };
+  const [collapsed, setCollapsed] = useState(false);
+  const [siderWidth, setSiderWidth] = useState(normalWidth);
+
+  const onCollapse = (collapsed: any) => {
+    setCollapsed(collapsed);
+    setSiderWidth(collapsed ? collapsedWidth : normalWidth);
+  };
+
+  const handleMoving = (
+    _: any,
+    {
+      width,
+    }: {
+      width: any;
+    }
+  ) => {
+    if (width > collapsedWidth) {
+      setSiderWidth(width);
+      setCollapsed(!(width > collapsedWidth + 20));
+    } else {
+      setSiderWidth(collapsedWidth);
+      setCollapsed(true);
+    }
+  };
+  const [friendList, setFriendList] = useState<any[]>([]);
+  const firend = useRef<any>();
+  const [isEmpty, setIsEmpty] = useState(true);
+  useEffect(() => {
+    //请求获取好友列表
+    let getFriendList = async () => {
+      firend.current = await getFriend(state.user.qq);
+      console.log("好友", firend.current.message);
+
+      if (Array.isArray(firend.current.message)) {
+        setFriendList(firend.current.message);
+        setIsEmpty(false);
+      }
+    };
+    getFriendList();
+  }, []);
+  //添加好友
+  const [isAddFriend, setIsAddFriend] = useState(false);
+  const AddRes = useRef<any>();
+  // async  function handleAddFriend(){
+  // AddRes.current=await addFriend({qq:state.})
+  //   }
+  const FormItem = Form.Item;
+  const [form] = Form.useForm();
+
+  function onOk(e: any) {
+    console.log(e.target.value);
+    form.validate().then(async (res) => {
+      console.log(res);
+      AddRes.current = await addFriend({
+        qq: state.user.qq,
+        friendNumber: res.qq,
+      });
+      console.log(AddRes.current);
+      if (AddRes.current.message == "该用户未注册！") {
+        Message.error("该用户未注册!");
+      } else if (AddRes.current.message == "添加好友成功") {
+        Message.success("添加好友成功!");
+        setIsAddFriend(false);
+        firend.current = await getFriend(state.user.qq);
+        console.log(firend.current.message);
+        if (Array.isArray(firend.current.message)) {
+          setFriendList(firend.current.message);
+          setIsEmpty(false);
+        }
+      }
+    });
+  }
+
+  const formItemLayout = {
+    labelCol: {
+      span: 4,
+    },
+    wrapperCol: {
+      span: 20,
+    },
+  };
+
+  //删除好友
+  const deleteRes = useRef<any>();
+  async function handleDelete(obj: any) {
+    deleteRes.current = await deleteFriend({
+      qq: obj.owner,
+      friend: obj.friend,
+    });
+    console.log(deleteRes.current);
+    if (deleteRes.current.message == "删除好友成功") {
+      Message.success("删除好友成功!");
+      firend.current = await getFriend(state.user.qq);
+      console.log(firend.current.message);
+      if (Array.isArray(firend.current.message)) {
+        setFriendList(firend.current.message);
+      } else if (firend.current.message == "该用户没有好友~") {
+        setFriendList(firend.current.message);
+        setIsEmpty(true);
+      }
+    }
+  }
   return (
     <div className="container">
       <div className="title">在线互动聊天系统</div>
-
-      <Layout className="wrapper">
-        <Header className="header">
-          <span>用户：李佳燕</span>
-          <span onClick={handleLoginOut}>退出登录</span>
-        </Header>
-        <Layout>
-          <Content className="chat">
-            <div className="chat-content"></div>
-            <div className="chat-ipt">
-              <textarea></textarea>
-              <button>发 送</button>
-            </div>
-          </Content>
-          <Sider className="friend-container">
-            <div className="firend-title">好友列表</div>
-            
-            <ul></ul>
-          </Sider>
-        </Layout>
+      <Layout className="byte-layout-collapse-demo">
+        <Sider
+          collapsible
+          theme="dark"
+          onCollapse={onCollapse}
+          collapsed={collapsed}
+          width={siderWidth}
+          resizeBoxProps={{
+            directions: ["right"],
+            onMoving: handleMoving,
+          }}
+        >
+          <div className="logo" />
+          <Menu theme="dark" autoOpen style={{ width: "100%" }}>
+            <MenuItem key="1">
+              <IconHome />
+              李佳燕
+            </MenuItem>
+            {/* <MenuItem key="2">
+              <IconCalendar />
+              区块
+            </MenuItem>
+            <MenuItem key="3">
+              <IconCalendar />
+              模块
+            </MenuItem> */}
+            <SubMenu
+              key="friend"
+              title={
+                <span>
+                  <IconCalendar /> 好友列表
+                </span>
+              }
+            >
+              {isEmpty ? (
+                <Empty
+                  style={isEmpty ? { display: "block" } : { display: "none" }}
+                  icon={
+                    <div
+                      style={{
+                        background: "#81a9f0",
+                        display: "inline-flex",
+                        borderRadius: "50%",
+                        width: 37,
+                        height: 37,
+                        fontSize: 25,
+                        alignItems: "center",
+                        color: "white",
+                        justifyContent: "center",
+                      }}
+                      onClick={() => {
+                        setIsAddFriend(true);
+                      }}
+                    >
+                      <IconPlus />
+                    </div>
+                  }
+                  description="还没有好友，快去添加好友吧"
+                />
+              ) : (
+                <div>
+                  {friendList.map((item) => (
+                    <div className="firend" key={item.id}>
+                      {" "}
+                      <MenuItem key={item.id}>
+                        {item.friendName}{" "}
+                        <button
+                          className="deleteBtn"
+                          onClick={() => handleDelete(item)}
+                        >
+                          删除
+                        </button>
+                      </MenuItem>
+                    </div>
+                  ))}
+                </div>
+              )}
+              ;
+              {/* <MenuItem key="11">张三</MenuItem>
+              <MenuItem key="12">分隔符</MenuItem>
+              <MenuItem key="13">布局</MenuItem> */}
+            </SubMenu>
+            <SubMenu
+              key="group"
+              title={
+                <span>
+                  <IconCalendar /> 群聊
+                </span>
+              }
+            >
+              <Empty
+                style={isEmpty ? { display: "block" } : { display: "none" }}
+                icon={
+                  <div
+                    style={{
+                      background: "#81a9f0",
+                      display: "inline-flex",
+                      borderRadius: "50%",
+                      width: 37,
+                      height: 37,
+                      fontSize: 25,
+                      alignItems: "center",
+                      color: "white",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <IconPlus />
+                  </div>
+                }
+                description="还没有群聊，快去创建群聊吧"
+              />
+              {/* <MenuItem key="1">张三</MenuItem>
+              <MenuItem key="2">分隔符</MenuItem>
+              <MenuItem key="3">布局</MenuItem> */}
+            </SubMenu>
+          </Menu>
+        </Sider>
+        <Content
+          style={{
+            background: "rgb(240,255,255)",
+            height: "100%",
+          }}
+          className="chat"
+        >
+          <div className="content-title">Content</div>
+          <div className="chat-content"></div>
+          <div className="chat-ipt">
+            <textarea></textarea>
+            <button>发 送</button>
+          </div>
+        </Content>
       </Layout>
+      <Modal
+        title="添加好友"
+        visible={isAddFriend}
+        onOk={(e) => onOk(e)}
+        onCancel={() => setIsAddFriend(false)}
+      >
+        <Form
+          {...formItemLayout}
+          form={form}
+          labelCol={{
+            style: { flexBasis: 90 },
+          }}
+          wrapperCol={{
+            style: { flexBasis: "calc(100% - 90px)" },
+          }}
+        >
+          <FormItem label="QQ" field="qq" rules={[{ required: true }]}>
+            <Input placeholder="请输入要添加好友的qq号" />
+          </FormItem>
+        </Form>
+      </Modal>
     </div>
   );
 }

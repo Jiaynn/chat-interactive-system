@@ -15,6 +15,30 @@ const register = (obj: any) => {
   });
 };
 
+//获取好友列表
+const getFriend = (obj: any) => {
+  return instance.get(`/friend/show?qq=${obj}`, {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  });
+};
+//添加好友
+const addFriend = (obj: any) => {
+  return instance.post(`/friend/add`, obj, {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  });
+};
+//删除好友
+const deleteFriend = (obj: any) => {
+  return instance.get(`/friend/delete?qq=${obj.qq}&friend=${obj.friend}`, {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  });
+};
 const judgeBoardId = (obj: number) => {
   console.log(obj);
 
@@ -41,6 +65,9 @@ const switchMode = (obj: FormData) => {
 export {
   login,
   register,
+  getFriend,
+  addFriend,
+  deleteFriend,
   judgeBoardId,
   exitBoard,
   deleteBoard,

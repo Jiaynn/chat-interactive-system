@@ -28,7 +28,7 @@ const Login: FC = () => {
 
     if (getLoginData.current.message === "登录成功") {
       localStorage.setItem("token", JSON.stringify(getLoginData.current.token));
-      navigate("/chat");
+      navigate("/chat", { state: { user: getLoginData.current.user } });
     } else {
       Message.error("登录失败，密码错误，请重试！");
     }
