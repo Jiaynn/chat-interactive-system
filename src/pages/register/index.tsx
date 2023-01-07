@@ -14,14 +14,9 @@ export default function Register() {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const getData = useRef<any>(null);
-  const [showErr, setShowErr] = useState(false);
   const handleRegist = async (value: any) => {
-    console.log(value);
     delete value.confirmPwd;
-    console.log(value);
-
     getData.current = await register(value);
-    console.log(getData.current);
 
     if (getData.current.message === "注册成功") {
       navigate("/login");
@@ -29,9 +24,6 @@ export default function Register() {
       Message.error(`QQ号被占用,请更换其他的QQ号!`);
     }
   };
-  useEffect(() => {
-    setShowErr(false);
-  }, []);
 
   return (
     <div className={style["container"]}>

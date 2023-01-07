@@ -24,7 +24,6 @@ const Login: FC = () => {
     };
 
     getLoginData.current = await login(obj);
-    console.log(getLoginData.current);
 
     if (getLoginData.current.message === "登录成功") {
       localStorage.setItem("token", JSON.stringify(getLoginData.current.token));

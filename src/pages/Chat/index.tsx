@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import "./index.css";
 
 import { useLocation, useNavigate } from "react-router-dom";
@@ -15,6 +15,9 @@ import {
   Modal,
   Form,
   Input,
+  Descriptions,
+  Avatar,
+  Popover,
 } from "@arco-design/web-react";
 import {
   IconHome,
@@ -22,7 +25,14 @@ import {
   IconExclamation,
   IconPlus,
 } from "@arco-design/web-react/icon";
-import { addFriend, deleteFriend, getFriend } from "../../service";
+import {
+  addFriend,
+  deleteFriend,
+  getFriend,
+  getHistoryMsg,
+  saveMessages,
+  showFriend,
+} from "../../service";
 import { io } from "socket.io-client";
 const MenuItem = Menu.Item;
 const SubMenu = Menu.SubMenu;
@@ -30,13 +40,8 @@ const SubMenu = Menu.SubMenu;
 const collapsedWidth = 60;
 const normalWidth = 220;
 export default function Chat() {
-  const navigate = useNavigate();
   const { state } = useLocation();
-  console.log("state", state);
-  const socket = io("ws://127.0.0.1:3007");
-  socket.on("connect", () => {
-    console.log(socket.connected);
-  });
+
   const [collapsed, setCollapsed] = useState(false);
   const [siderWidth, setSiderWidth] = useState(normalWidth);
 
@@ -64,11 +69,18 @@ export default function Chat() {
   const [friendList, setFriendList] = useState<any[]>([]);
   const firend = useRef<any>();
   const [isEmpty, setIsEmpty] = useState(true);
+  const socket = useRef<any>();
+  const [messages, setMessages] = useState<any>([]);
+  const [contentTitle, setContentTitle] = useState<any>({
+    friend: "",
+    friendName: "聊天",
+    owner: "",
+    id: 0,
+  });
   useEffect(() => {
     //请求获取好友列表
     let getFriendList = async () => {
       firend.current = await getFriend(state.user.qq);
-      console.log("好友", firend.current.message);
 
       if (Array.isArray(firend.current.message)) {
         setFriendList(firend.current.message);
@@ -77,6 +89,21 @@ export default function Chat() {
     };
     getFriendList();
   }, []);
+  const friendInfo = useRef<any>();
+  //在线用户
+  const [curList, setCurList] = useState<any>([]);
+  useEffect(() => {
+    //建立 socket 连接
+    socket.current = io("ws://localhost:3007");
+
+    socket.current.on("messageResponse", async (data: any) => {
+      setMessages((state: any) => [...state, data]);
+    });
+    socket.current.on("message", (msg: any) => {});
+  }, []);
+  useEffect(() => {
+    //判断气泡位置
+  }, [messages]);
   //添加好友
   const [isAddFriend, setIsAddFriend] = useState(false);
   const AddRes = useRef<any>();
@@ -84,18 +111,19 @@ export default function Chat() {
   const [form] = Form.useForm();
   function onOk(e: any) {
     form.validate().then(async (res) => {
-      console.log(res);
       AddRes.current = await addFriend({
         qq: state.user.qq,
+        qqName: state.user.nickname,
         friendNumber: res.qq,
       });
+
       if (AddRes.current.message == "该用户未注册！") {
         Message.error("该用户未注册!");
       } else if (AddRes.current.message == "添加好友成功") {
         Message.success("添加好友成功!");
         setIsAddFriend(false);
         firend.current = await getFriend(state.user.qq);
-        console.log(firend.current.message);
+
         if (Array.isArray(firend.current.message)) {
           setFriendList(firend.current.message);
           setIsEmpty(false);
@@ -119,11 +147,11 @@ export default function Chat() {
       qq: obj.owner,
       friend: obj.friend,
     });
-    console.log(deleteRes.current);
+
     if (deleteRes.current.message == "删除好友成功") {
       Message.success("删除好友成功!");
       firend.current = await getFriend(state.user.qq);
-      console.log(firend.current.message);
+
       if (Array.isArray(firend.current.message)) {
         setFriendList(firend.current.message);
       } else if (firend.current.message == "该用户没有好友~") {
@@ -132,12 +160,92 @@ export default function Chat() {
       }
     }
   }
-  const [contentTitle, setContentTitle] = useState("聊天");
-  //和好友通话
-  function handleChat(chatInfo: any) {
-    console.log(chatInfo);
-    setContentTitle(chatInfo.friendName);
+  const data = [
+    {
+      label: "用户名",
+      value: state.user.nickname,
+    },
+    {
+      label: "qq",
+      value: state.user.qq,
+    },
+    {
+      label: "年龄",
+      value: state.user.age,
+    },
+    {
+      label: "电话号码",
+      value: state.user.telephone,
+    },
+  ];
+  //个人信息查看
+  function info() {
+    Modal.info({
+      title: "个人信息",
+      content: (
+        <Descriptions
+          column={1}
+          // title="User Info"
+          data={data}
+          labelStyle={{ paddingRight: 100 }}
+        />
+      ),
+    });
   }
+
+  //和好友通话
+  const historyMsg = useRef<any>();
+  async function handleChat(chatInfo: any) {
+    setContentTitle(chatInfo);
+    //读取历史消息
+    friendInfo.current = await showFriend(chatInfo.friendName);
+    const friendQQ = friendInfo.current.message.qq;
+    const obj = {
+      from: state.user.qq,
+      to: friendQQ,
+    };
+    historyMsg.current = await getHistoryMsg(obj);
+    const history = historyMsg.current.message;
+
+    if (history !== "") {
+      const finalHistory = history.map((item: any) => {
+        return {
+          fromName: item.fromName,
+          isSystem: false,
+          msg: item.message,
+          toName: item.toName,
+        };
+      });
+      setMessages(finalHistory);
+    }
+  }
+
+  const message = useRef<HTMLTextAreaElement | null>(null);
+
+  async function handleSendMessage() {
+    const value = message.current?.value;
+
+    socket.current.emit("message", {
+      id: state.user.qq,
+      name: state.user.nickname,
+      toName: contentTitle.friendName,
+      msg: value,
+    });
+
+    //发送请求,存储历史消息
+    //先获取qq号
+    friendInfo.current = await showFriend(contentTitle.friendName);
+    const friendQQ = friendInfo.current.message.qq;
+    const obj = {
+      qq: state.user.qq,
+      toQQ: friendQQ,
+      message: value,
+      fromName: state.user.nickname,
+      toName: contentTitle.friendName,
+    };
+    await saveMessages(obj);
+  }
+
   return (
     <div className="container">
       <div className="title">在线互动聊天系统</div>
@@ -157,8 +265,14 @@ export default function Chat() {
           <Menu theme="dark" autoOpen style={{ width: "100%" }}>
             <MenuItem key="1">
               <IconHome />
-              {state.user.nickname}
-            </MenuItem>
+              <span onClick={info}>{state.user.nickname} </span>
+              <IconPlus
+                style={{ marginLeft: 50 }}
+                onClick={() => {
+                  setIsAddFriend(true);
+                }}
+              />
+            </MenuItem>{" "}
             <SubMenu
               key="friend"
               title={
@@ -216,7 +330,7 @@ export default function Chat() {
               key="group"
               title={
                 <span>
-                  <IconCalendar /> 群聊
+                  <IconCalendar /> 在线用户
                 </span>
               }
             >
@@ -251,11 +365,38 @@ export default function Chat() {
           }}
           className="chat"
         >
-          <div className="content-title">{contentTitle}</div>
-          <div className="chat-content"></div>
+          <div className="content-title">{contentTitle.friendName}</div>
+          <div className="chat-content">
+            {messages.map((item: any, index: number) => {
+              return item.fromName == state.user.nickname ? (
+                <div
+                  key={index}
+                  className="message"
+                  style={{ float: "right", clear: "both" }}
+                >
+                  {" "}
+                  <div className="msg-content">{item.msg}</div>
+                  <Avatar style={{ backgroundColor: "#81a9f0" }}>
+                    {item.fromName}
+                  </Avatar>
+                </div>
+              ) : (
+                <div
+                  key={index}
+                  className="message"
+                  style={{ float: "left", clear: "both" }}
+                >
+                  <Avatar style={{ backgroundColor: "#81a9f0" }}>
+                    {item.fromName}
+                  </Avatar>
+                  <div className="msg-content">{item.msg}</div>
+                </div>
+              );
+            })}
+          </div>
           <div className="chat-ipt">
-            <textarea></textarea>
-            <button>发 送</button>
+            <textarea ref={message}></textarea>
+            <button onClick={handleSendMessage}>发 送</button>
           </div>
         </Content>
       </Layout>

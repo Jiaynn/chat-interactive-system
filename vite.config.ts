@@ -12,4 +12,15 @@ export default defineConfig({
     },
   },
   plugins: [react()],
+  // server: {
+  //   //设置代理
+  //   proxy: {
+  //     "/socket.io": {
+  //       target: "http://localhost:3007",
+  //       ws: true,
+  //       changeOrigin: true,
+  //     },
+  //   },
+  //   // disableHostCheck: true,
+  // },
 });

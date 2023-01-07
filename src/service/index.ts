@@ -41,25 +41,39 @@ const deleteFriend = (obj: any) => {
   });
 };
 
-const deleteBoard = (obj: number) => {
-  return instance.delete(`/board/dissolve?boardId=${obj}`);
+//存储消息
+const saveMessages = (obj: any) => {
+  return instance.post(`/message/save`, obj, {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  });
 };
 
-const addNewPage = (obj: FormData) => {
-  return instance.put(`/board/page`, obj);
+//查询好友信息
+const showFriend = (obj: any) => {
+  return instance.get(`/friend/showFriend?nickname=${obj}`, {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  });
 };
 
-const switchMode = (obj: FormData) => {
-  return instance.put(`/board/switchMode`, obj);
+//读取历史消息
+const getHistoryMsg = (obj: any) => {
+  return instance.get(`/message/getHistoryMsg?from=${obj.from}&to=${obj.to}`, {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  });
 };
-
 export {
   login,
   register,
   getFriend,
   addFriend,
   deleteFriend,
-  deleteBoard,
-  addNewPage,
-  switchMode,
+  saveMessages,
+  showFriend,
+  getHistoryMsg,
 };
