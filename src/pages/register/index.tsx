@@ -13,8 +13,6 @@ const FormItem = Form.Item;
 export default function Register() {
   const navigate = useNavigate();
   const [form] = Form.useForm();
-  const userNameRef = useRef<HTMLInputElement>(null);
-  const pwdRef = useRef<any>(null);
   const getData = useRef<any>(null);
   const [showErr, setShowErr] = useState(false);
   const handleRegist = async (value: any) => {
@@ -29,9 +27,6 @@ export default function Register() {
       navigate("/login");
     } else if (getData.current.message.includes("QQ号被占用")) {
       Message.error(`QQ号被占用,请更换其他的QQ号!`);
-      // setTimeout(() => {
-      //   setShowErr(false);
-      // }, 2000);
     }
   };
   useEffect(() => {
@@ -136,16 +131,9 @@ export default function Register() {
             </FormItem>
           </Form>
         </div>
-
         <div className={style["msg"]}>
           已有帐号？
           <Link to={"/login"}>登录</Link>
-        </div>
-        <div
-          className={style["error"]}
-          style={showErr ? { display: "block" } : { display: "none" }}
-        >
-          {getData.current}
         </div>
       </div>
     </div>

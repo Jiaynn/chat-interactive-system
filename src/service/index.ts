@@ -1,5 +1,5 @@
-import { instance, instance1 } from "./service";
-
+import { instance } from "./service";
+//登录
 const login = (obj: any) => {
   return instance.post("/api/login", obj, {
     headers: {
@@ -8,46 +8,37 @@ const login = (obj: any) => {
   });
 };
 const register = (obj: any) => {
+  //注册
   return instance.post("/api/reguser", obj, {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
   });
 };
-
-//获取好友列表
 const getFriend = (obj: any) => {
+  //获取好友列表
   return instance.get(`/friend/show?qq=${obj}`, {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
   });
 };
-//添加好友
 const addFriend = (obj: any) => {
+  //添加好友
   return instance.post(`/friend/add`, obj, {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
   });
 };
-//删除好友
+
 const deleteFriend = (obj: any) => {
+  //删除好友
   return instance.get(`/friend/delete?qq=${obj.qq}&friend=${obj.friend}`, {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
   });
-};
-const judgeBoardId = (obj: number) => {
-  console.log(obj);
-
-  return instance1.get(`/board/validate?boardId=${obj}`);
-};
-const exitBoard = (obj: any) => {
-  return instance1.delete(
-    `/board/exit?boardId=${obj.boardId}&userName=${obj.curUser}`
-  );
 };
 
 const deleteBoard = (obj: number) => {
@@ -68,8 +59,6 @@ export {
   getFriend,
   addFriend,
   deleteFriend,
-  judgeBoardId,
-  exitBoard,
   deleteBoard,
   addNewPage,
   switchMode,

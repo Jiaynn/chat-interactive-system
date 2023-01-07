@@ -23,6 +23,7 @@ import {
   IconPlus,
 } from "@arco-design/web-react/icon";
 import { addFriend, deleteFriend, getFriend } from "../../service";
+import { io } from "socket.io-client";
 const MenuItem = Menu.Item;
 const SubMenu = Menu.SubMenu;
 
@@ -32,18 +33,10 @@ export default function Chat() {
   const navigate = useNavigate();
   const { state } = useLocation();
   console.log("state", state);
-
-  function handleLoginOut() {
-    localStorage.removeItem("token");
-    navigate("/login");
-  }
-
-  const ws = new WebSocket("ws://127.0.0.1:3007");
-  console.log(ws);
-  ws.onopen = () => {
-    console.log("连接服务器成功");
-    ws.send("连接服务器成功");
-  };
+  const socket = io("ws://127.0.0.1:3007");
+  socket.on("connect", () => {
+    console.log(socket.connected);
+  });
   const [collapsed, setCollapsed] = useState(false);
   const [siderWidth, setSiderWidth] = useState(normalWidth);
 
@@ -87,21 +80,15 @@ export default function Chat() {
   //添加好友
   const [isAddFriend, setIsAddFriend] = useState(false);
   const AddRes = useRef<any>();
-  // async  function handleAddFriend(){
-  // AddRes.current=await addFriend({qq:state.})
-  //   }
   const FormItem = Form.Item;
   const [form] = Form.useForm();
-
   function onOk(e: any) {
-    console.log(e.target.value);
     form.validate().then(async (res) => {
       console.log(res);
       AddRes.current = await addFriend({
         qq: state.user.qq,
         friendNumber: res.qq,
       });
-      console.log(AddRes.current);
       if (AddRes.current.message == "该用户未注册！") {
         Message.error("该用户未注册!");
       } else if (AddRes.current.message == "添加好友成功") {
@@ -116,7 +103,6 @@ export default function Chat() {
       }
     });
   }
-
   const formItemLayout = {
     labelCol: {
       span: 4,
@@ -146,6 +132,12 @@ export default function Chat() {
       }
     }
   }
+  const [contentTitle, setContentTitle] = useState("聊天");
+  //和好友通话
+  function handleChat(chatInfo: any) {
+    console.log(chatInfo);
+    setContentTitle(chatInfo.friendName);
+  }
   return (
     <div className="container">
       <div className="title">在线互动聊天系统</div>
@@ -165,16 +157,8 @@ export default function Chat() {
           <Menu theme="dark" autoOpen style={{ width: "100%" }}>
             <MenuItem key="1">
               <IconHome />
-              李佳燕
+              {state.user.nickname}
             </MenuItem>
-            {/* <MenuItem key="2">
-              <IconCalendar />
-              区块
-            </MenuItem>
-            <MenuItem key="3">
-              <IconCalendar />
-              模块
-            </MenuItem> */}
             <SubMenu
               key="friend"
               title={
@@ -213,7 +197,7 @@ export default function Chat() {
                   {friendList.map((item) => (
                     <div className="firend" key={item.id}>
                       {" "}
-                      <MenuItem key={item.id}>
+                      <MenuItem key={item.id} onClick={() => handleChat(item)}>
                         {item.friendName}{" "}
                         <button
                           className="deleteBtn"
@@ -227,9 +211,6 @@ export default function Chat() {
                 </div>
               )}
               ;
-              {/* <MenuItem key="11">张三</MenuItem>
-              <MenuItem key="12">分隔符</MenuItem>
-              <MenuItem key="13">布局</MenuItem> */}
             </SubMenu>
             <SubMenu
               key="group"
@@ -260,9 +241,6 @@ export default function Chat() {
                 }
                 description="还没有群聊，快去创建群聊吧"
               />
-              {/* <MenuItem key="1">张三</MenuItem>
-              <MenuItem key="2">分隔符</MenuItem>
-              <MenuItem key="3">布局</MenuItem> */}
             </SubMenu>
           </Menu>
         </Sider>
@@ -273,7 +251,7 @@ export default function Chat() {
           }}
           className="chat"
         >
-          <div className="content-title">Content</div>
+          <div className="content-title">{contentTitle}</div>
           <div className="chat-content"></div>
           <div className="chat-ipt">
             <textarea></textarea>
